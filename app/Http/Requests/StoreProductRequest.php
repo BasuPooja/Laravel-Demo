@@ -11,7 +11,7 @@ class StoreProductRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -24,6 +24,7 @@ class StoreProductRequest extends FormRequest
         return [
             'name' => 'required|string|min:3',
             'price' => 'required|numeric',
+            'description' => 'nullable|string',
         ];
     }
 }

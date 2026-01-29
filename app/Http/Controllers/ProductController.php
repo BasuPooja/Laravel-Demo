@@ -1,8 +1,9 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use App\Http\Requests\StoreProductRequest;
 use Illuminate\Http\Request;
+use App\Models\Product;
 
 class ProductController extends Controller
 {
@@ -11,7 +12,7 @@ class ProductController extends Controller
      */
     public function index()
     {
-        //
+        return Product::all();
     }
 
     /**
@@ -37,11 +38,14 @@ class ProductController extends Controller
     //     return response()->json(['message' => 'Product created'], 201);
     // }
 
-    use App\Http\Requests\StoreProductRequest;
 
     public function store(StoreProductRequest $request)
     {
-        return "Product stored using Form Request";
+        Product::create($request->validated());
+
+        return response()->json([
+            'message' => 'Product created successfully'
+        ], 201);
     }
 
 
@@ -64,16 +68,19 @@ class ProductController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, $id)
     {
-        //
+        $product = Product::findOrFail($id);
+        $product->update($request->only(['name', 'price', 'description']));
+        return response()->json(['message' => 'Product updated successfully']);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy($id)
     {
-        //
+        Product::destroy($id);
+        return "Product deleted";
     }
 }
