@@ -17,6 +17,6 @@ Route::post('/test', function () {
 
 Route::resource('products', ProductController::class);
 
-Route::middleware('auth:sanctum')->group(function () {
-    Route::apiResource('products', ProductController::class);
-});
+// Route::middleware('auth:sanctum')->group(function () {
+//     Route::apiResource('products', ProductController::class);
+// });
