@@ -19,10 +19,10 @@ class ProductController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
-    {
-        return "Create";
-    }
+    // public function create()
+    // {
+    //     // return "Create";
+    // }
 
     /**
      * Store a newly created resource in storage.
@@ -42,10 +42,11 @@ class ProductController extends Controller
 
     public function store(StoreProductRequest $request)
     {
-        Product::create($request->validated());
+        $product = Product::create($request->validated());
 
         return response()->json([
-            'message' => 'Product created successfully'
+            'message' => 'Product created successfully',
+            'data' => $product
         ], 201);
     }
 

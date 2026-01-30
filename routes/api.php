@@ -13,4 +13,6 @@ Route::post('/test', function () {
     return 'post';
 });
 
-Route::post('/products', [ProductController::class, 'create']);
+// Route::post('/products', [ProductController::class, 'create']);
+
+Route::resource('products', ProductController::class);
