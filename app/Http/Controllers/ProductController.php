@@ -4,19 +4,25 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreProductRequest;
 use Illuminate\Http\Request;
 use App\Models\Product;
+use Illuminate\Support\Facades\Storage;
+
 
 class ProductController extends Controller
 {
-
     public function index()
     {
         return response()->json(Product::all(), 200);
     }
 
-
     public function store(StoreProductRequest $request)
     {
-        $product = Product::create($request->validated());
+        $data = $request->validated();
+
+        if ($request->hasFile('image')) {
+            $data['image'] = $request->file('image')->store('products', 'public');
+        }
+
+        $product = Product::create($data);
 
         return response()->json([
             'message' => 'Product created successfully',
@@ -31,7 +37,17 @@ class ProductController extends Controller
 
     public function update(StoreProductRequest $request, Product $product)
     {
-        $product->update($request->validated());
+        $data = $request->validated();
+        if ($request->hasFile('image')) {
+            // delete old image
+            if ($product->image) {
+                Storage::disk('public')->delete($product->image);
+            }
+
+            $data['image'] = $request->file('image')->store('products', 'public');
+        }
+
+        $product->update($data);
 
         return response()->json([
             'message' => 'Product updated successfully',
@@ -41,6 +57,10 @@ class ProductController extends Controller
 
     public function destroy(Product $product)
     {
+        if ($product->image) {
+            Storage::disk('public')->delete($product->image);
+        }
+
         $product->delete();
 
         return response()->json([
