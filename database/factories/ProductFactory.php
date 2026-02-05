@@ -15,14 +15,14 @@ class ProductFactory extends Factory
      * @return array<string, mixed>
      */
     protected $model = Product::class;
-    
+
     public function definition(): array
     {
         return [
             'name' => $this->faker->words(2, true),
             'price' => $this->faker->numberBetween(100, 5000),
             'description' => $this->faker->sentence(10),
-            'image' => null,
+            'image' => $this->faker->imageUrl(640, 480, 'products', true),
         ];
     }
 }
