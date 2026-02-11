@@ -12,6 +12,18 @@ class ProductController extends Controller
 {
     public function index()
     {
+        $query = Product::query();
+
+        if(request('search')){
+            $query->where('name','like','%'.request('search').'%');
+        }
+
+        if(request('sort')){
+            $query->orderBy(request('sort'),'asc');
+        }
+
+        $products = $query->paginate(10);
+
         return response()->json(Product::all(), 200);
     }
 
