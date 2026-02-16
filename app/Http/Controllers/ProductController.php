@@ -22,9 +22,9 @@ class ProductController extends Controller
             $query->orderBy(request('sort'),'asc');
         }
 
-        $products = $query->paginate(10);
+        $products = $query->paginate(8);
 
-        return response()->json(Product::all(), 200);
+        return response()->json($products);
     }
 
     public function store(StoreProductRequest $request)
