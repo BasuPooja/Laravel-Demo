@@ -14,15 +14,19 @@ class ProductController extends Controller
     {
         $query = Product::query();
 
-        if(request('search')){
+        if(request->filled('search')){
             $query->where('name','like','%'.request('search').'%');
         }
 
-        if(request('sort')){
-            $query->orderBy(request('sort'),'asc');
-        }
+        if ($request->filled('sort')) {
+        $allowedSorts = ['name', 'price', 'created_at'];
 
-        $products = $query->paginate(8);
+        if (in_array($request->sort, $allowedSorts)) {
+            $query->orderBy($request->sort, 'asc');
+        }
+    }
+
+        $products = $query->paginate(8)->withQueryString();
 
         return response()->json($products);
     }
