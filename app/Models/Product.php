@@ -13,4 +13,17 @@ class Product extends Model
     protected $casts = [
         'price' => 'float',
     ];
+
+    // public function getImageAttribute($value)
+    // {
+    //     if (!$value) {
+    //         return null;
+    //     }
+
+    //     if (str_starts_with($value, 'http')) {
+    //         return $value;
+    //     }
+
+    //     return asset('storage/' . $value);
+    // }
 }

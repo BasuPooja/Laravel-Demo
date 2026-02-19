@@ -18,11 +18,27 @@ class ProductFactory extends Factory
 
     public function definition(): array
     {
+        // $path = storage_path('app/public/products');
+
+        // if (!file_exists($path)) {
+        //     mkdir($path, 0777, true);
+        // }
+
+        // $image = $this->faker->image(
+        //     storage_path('app/public/products'),
+        //     640,
+        //     480,
+        //     null,
+        //     false 
+        // );
+
         return [
             'name' => $this->faker->words(2, true),
             'price' => $this->faker->numberBetween(100, 5000),
             'description' => $this->faker->sentence(10),
-            'image' => $this->faker->imageUrl(640, 480, 'products', true),
+            // 'image' =>'https://picsum.photos/640/480?random=' . rand(1, 10000),
+            'image' =>'https://picsum.photos/640/480?random=' . rand(1, 10000),
+
         ];
     }
 }
