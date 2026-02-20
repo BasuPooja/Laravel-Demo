@@ -37,6 +37,14 @@ class ProductController extends Controller
             $query->latest();
         }
 
+        if ($request->search) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+
+        if ($request->sortField && $request->sortDirection) {
+            $query->orderBy($request->sortField, $request->sortDirection);
+        }
+
         $products = $query->paginate(8)->withQueryString();
 
         return response()->json($products);
@@ -97,5 +105,22 @@ class ProductController extends Controller
         return response()->json([
             'message' => 'Product deleted successfully'
         ], 200);
+    }
+
+    public function bulkDelete(Request $request)
+    {
+        $ids = $request->ids;
+
+        if (!$ids || !is_array($ids)) {
+            return response()->json([
+                'message' => 'Invalid product IDs'
+            ], 400);
+        }
+
+        Product::whereIn('id', $ids)->delete();
+
+        return response()->json([
+            'message' => 'Selected products deleted successfully'
+        ]);
     }
 }
