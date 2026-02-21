@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Product;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\UpdateProductRequest;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ProductController extends Controller
 {
@@ -127,5 +128,52 @@ class ProductController extends Controller
         return response()->json([
             'message' => 'Selected products deleted successfully'
         ]);
+    }
+
+     public function export(Request $request)
+    {
+        $query = Product::query();
+
+        // Apply search filter
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+
+        //  Export only selected IDs
+        if ($request->filled('ids')) {
+            $query->whereIn('id', $request->ids);
+        }
+
+        //  Export only current page
+        if ($request->filled('page')) {
+            $perPage = 8; // same as pagination
+            $query->skip(($request->page - 1) * $perPage)
+                ->take($perPage);
+        }
+
+        $products = $query->get();
+
+        $response = new StreamedResponse(function () use ($products) {
+            $handle = fopen('php://output', 'w');
+
+            // CSV Headers
+            fputcsv($handle, ['ID', 'Name', 'Price', 'Description']);
+
+            foreach ($products as $product) {
+                fputcsv($handle, [
+                    $product->id,
+                    $product->name,
+                    $product->price,
+                    $product->description,
+                ]);
+            }
+
+            fclose($handle);
+        });
+
+        $response->headers->set('Content-Type', 'text/csv');
+        $response->headers->set('Content-Disposition', 'attachment; filename="products.csv"');
+
+        return $response;
     }
 }
