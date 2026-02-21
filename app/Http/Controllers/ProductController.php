@@ -12,6 +12,11 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $query = Product::query();
+        
+        if ($request->hasFile('image')) {
+            $image = $request->file('image')->store('products', 'public');
+            $product->image = $image;
+        }
 
         if ($request->filled('search')) {
             $query->where('name', 'like', '%' . $request->search . '%');
