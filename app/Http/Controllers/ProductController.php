@@ -7,6 +7,8 @@ use App\Models\Product;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\UpdateProductRequest;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Illuminate\Support\Facades\DB;
+
 
 class ProductController extends Controller
 {
@@ -130,23 +132,23 @@ class ProductController extends Controller
         ]);
     }
 
-     public function export(Request $request)
+    public function export(Request $request)
     {
         $query = Product::query();
 
-        // Apply search filter
+        // Search filter
         if ($request->filled('search')) {
             $query->where('name', 'like', '%' . $request->search . '%');
         }
 
-        //  Export only selected IDs
+        // Export selected IDs
         if ($request->filled('ids')) {
             $query->whereIn('id', $request->ids);
         }
 
-        //  Export only current page
+        // Export current page
         if ($request->filled('page')) {
-            $perPage = 8; // same as pagination
+            $perPage = 8;
             $query->skip(($request->page - 1) * $perPage)
                 ->take($perPage);
         }
@@ -154,17 +156,23 @@ class ProductController extends Controller
         $products = $query->get();
 
         $response = new StreamedResponse(function () use ($products) {
+
             $handle = fopen('php://output', 'w');
 
-            // CSV Headers
-            fputcsv($handle, ['ID', 'Name', 'Price', 'Description']);
+            fputcsv($handle, ['ID', 'Name', 'Price', 'Description', 'Image']);
 
             foreach ($products as $product) {
+            // Export image full path 
+            $imageUrl = $product->image
+                    ? asset('storage/' . $product->image)
+                    : '';
+
                 fputcsv($handle, [
                     $product->id,
                     $product->name,
                     $product->price,
                     $product->description,
+                    $imageUrl 
                 ]);
             }
 
@@ -172,8 +180,107 @@ class ProductController extends Controller
         });
 
         $response->headers->set('Content-Type', 'text/csv');
-        $response->headers->set('Content-Disposition', 'attachment; filename="products.csv"');
+        $response->headers->set(
+            'Content-Disposition',
+            'attachment; filename="products.csv"'
+        );
 
         return $response;
+    }
+
+    // public function import(Request $request)
+    // {
+    //     $request->validate([
+    //         'file' => 'required|mimes:csv,txt|max:2048'
+    //     ]);
+
+    //     $file = $request->file('file');
+    //     $path = $file->getRealPath();
+
+    //     $handle = fopen($path, 'r');
+
+    //     // Skip header row
+    //     fgetcsv($handle);
+
+    //     DB::beginTransaction();
+
+    //     try {
+    //         while (($row = fgetcsv($handle, 1000, ',')) !== false) {
+
+    //             Product::create([
+    //                 'name' => $row[0],
+    //                 'price' => $row[1],
+    //                 'description' => $row[2] ?? null,
+    //             ]);
+    //         }
+
+    //         DB::commit();
+
+    //         return response()->json([
+    //             'message' => 'Products imported successfully'
+    //         ]);
+
+    //     } catch (\Exception $e) {
+    //         DB::rollback();
+
+    //         return response()->json([
+    //             'message' => 'Import failed',
+    //             'error' => $e->getMessage()
+    //         ], 500);
+    //     }
+    // }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:csv,txt|max:4096'
+        ]);
+
+        $file = $request->file('file');
+        $handle = fopen($file->getRealPath(), 'r');
+
+        // Skip header row
+        fgetcsv($handle);
+
+        DB::beginTransaction();
+
+        try {
+
+            while (($row = fgetcsv($handle, 1000, ',')) !== false) {
+
+                $imagePath = null;
+
+                if (!empty($row[4])) {
+
+                    $filename = basename($row[4]);
+
+                    $imagePath = 'products/' . $filename;
+                }
+
+                Product::create([
+                    'name' => $row[1],
+                    'price' => $row[2],
+                    'description' => $row[3] ?? null,
+                    'image' => $imagePath
+                ]);
+            }
+
+            fclose($handle);
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Products imported successfully'
+            ]);
+
+        } catch (\Exception $e) {
+
+            DB::rollback();
+
+            return response()->json([
+                'message' => 'Import failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }
