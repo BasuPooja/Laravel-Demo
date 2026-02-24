@@ -8,7 +8,8 @@ use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\UpdateProductRequest;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Support\Facades\DB;
-
+use App\Exports\ProductsExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ProductController extends Controller
 {
@@ -136,17 +137,14 @@ class ProductController extends Controller
     {
         $query = Product::query();
 
-        // Search filter
         if ($request->filled('search')) {
             $query->where('name', 'like', '%' . $request->search . '%');
         }
 
-        // Export selected IDs
-        if ($request->filled('ids')) {
+        if ($request->has('ids') && is_array($request->ids)) {
             $query->whereIn('id', $request->ids);
         }
 
-        // Export current page
         if ($request->filled('page')) {
             $perPage = 8;
             $query->skip(($request->page - 1) * $perPage)
@@ -155,37 +153,10 @@ class ProductController extends Controller
 
         $products = $query->get();
 
-        $response = new StreamedResponse(function () use ($products) {
-
-            $handle = fopen('php://output', 'w');
-
-            fputcsv($handle, ['ID', 'Name', 'Price', 'Description', 'Image']);
-
-            foreach ($products as $product) {
-            // Export image full path 
-            $imageUrl = $product->image
-                    ? asset('storage/' . $product->image)
-                    : '';
-
-                fputcsv($handle, [
-                    $product->id,
-                    $product->name,
-                    $product->price,
-                    $product->description,
-                    $imageUrl 
-                ]);
-            }
-
-            fclose($handle);
-        });
-
-        $response->headers->set('Content-Type', 'text/csv');
-        $response->headers->set(
-            'Content-Disposition',
-            'attachment; filename="products.csv"'
+        return Excel::download(
+            new ProductsExport($products),
+            'products.xlsx'
         );
-
-        return $response;
     }
 
     // public function import(Request $request)
