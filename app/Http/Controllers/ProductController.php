@@ -10,6 +10,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Support\Facades\DB;
 use App\Exports\ProductsExport;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\ProductsImport;
+
 
 class ProductController extends Controller
 {
@@ -201,57 +203,41 @@ class ProductController extends Controller
     //     }
     // }
 
+    // public function import(Request $request)
+    // {
+    //     $request->validate([
+    //         'file' => 'required|mimes:xlsx,xls|max:4096'
+    //     ]);
+
+    //     try {
+    //         Excel::import(new ProductsImport, $request->file('file'));
+
+    //         return response()->json([
+    //             'message' => 'Products imported successfully'
+    //         ]);
+
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'message' => 'Import failed',
+    //             'error' => $e->getMessage()
+    //         ], 500);
+    //     }
+    // }
+
+
     public function import(Request $request)
     {
         $request->validate([
-            'file' => 'required|mimes:csv,txt|max:4096'
+            'file' => 'required|mimes:xlsx,xls,csv'
         ]);
 
-        $file = $request->file('file');
-        $handle = fopen($file->getRealPath(), 'r');
+        Excel::import(
+            new ProductsImport($request->file('file')),
+            $request->file('file')
+        );
 
-        // Skip header row
-        fgetcsv($handle);
-
-        DB::beginTransaction();
-
-        try {
-
-            while (($row = fgetcsv($handle, 1000, ',')) !== false) {
-
-                $imagePath = null;
-
-                if (!empty($row[4])) {
-
-                    $filename = basename($row[4]);
-
-                    $imagePath = 'products/' . $filename;
-                }
-
-                Product::create([
-                    'name' => $row[1],
-                    'price' => $row[2],
-                    'description' => $row[3] ?? null,
-                    'image' => $imagePath
-                ]);
-            }
-
-            fclose($handle);
-
-            DB::commit();
-
-            return response()->json([
-                'message' => 'Products imported successfully'
-            ]);
-
-        } catch (\Exception $e) {
-
-            DB::rollback();
-
-            return response()->json([
-                'message' => 'Import failed',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return response()->json([
+            'message' => 'Products Imported Successfully'
+        ]);
     }
 }
